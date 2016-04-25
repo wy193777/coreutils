@@ -1,0 +1,17 @@
+[package]
+name = "ls"
+version = "0.1.0"
+authors = ["Shenghan Gao <gaoshenghan199123@gmail.com>"]
+
+[lib]
+name = "uu_ls"
+path = "ls.rs"
+
+[dependencies]
+getopts = "*"
+libc = "*"
+uucore = { path="../uucore" }
+
+[[bin]]
+name = "cp"
+path = "main.rs"
