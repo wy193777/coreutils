@@ -17,7 +17,7 @@ use getopts::Options;
 use std::fs;
 use std::fs::{ReadDir, DirEntry, FileType, Metadata};
 // use std::io::{ErrorKind, Result, Write};
-// use std::path::Path;
+use std::path::{Path, PathBuf};
 
 // static NAME: &'static str = "ls";
 // static VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -65,12 +65,16 @@ pub fn uumain(args: Vec<String>) -> i32 {
 }
 
 fn traverse(path: &String, matches: &getopts::Matches) {
-    let mut stack: Vec<&String> = vec![path];
+    let mut stack = vec![PathBuf::from(path)];
     while !stack.is_empty() {
-        let mut entries: Vec<_> = fs::read_dir(stack.pop()).unwrap().map(
+        let mut entries: Vec<_> = fs::read_dir(Path::new(stack.pop().unwrap().as_path())).unwrap().map(
             |res| res.unwrap().path()
         ).collect();
+        let dirs = entries.clone();
+        stack.extend(
+            entries.drain(..).filter(|e| e.is_dir())
+        );
         // entries.sort_by(|a, b| a.metadata().unwrap().len().cmp(&b.metadata().unwrap().len()));
-        print!("{:?}\n", entries);
+        print!("{:?}\n", &dirs);
     }
 }
