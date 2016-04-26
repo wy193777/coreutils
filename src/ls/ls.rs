@@ -15,7 +15,8 @@ extern crate uucore;
 
 use getopts::Options;
 use std::fs;
-use std::fs::{ReadDir, DirEntry, FileType, Metadata};
+// use std::fs::{ReadDir, DirEntry, FileType, Metadata};
+use std::cmp::Ordering;
 // use std::io::{ErrorKind, Result, Write};
 use std::path::{Path, PathBuf};
 
@@ -23,7 +24,7 @@ use std::path::{Path, PathBuf};
 // static VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 pub fn uumain(args: Vec<String>) -> i32 {
-    let program = args[0].clone();
+    // let program = args[0].clone();
     let mut opts = Options::new();
     opts.optflag("A", "", "List all entries except for '.' and '..'. ");
     opts.optflag("a", "", "Include directory entries whose names begin with a dot(‘.’).");
@@ -51,6 +52,14 @@ pub fn uumain(args: Vec<String>) -> i32 {
         Ok(m) => { m }
         Err(f) => { panic!(f.to_string()) }
     };
+
+    // let sort_fctn = if matches.opt_present("S") {
+    //     size_cmp
+    // }
+    // else {
+    //     name_cmp
+    // };
+
     if (&matches).free.is_empty() {
         print!(".\n", );
         traverse(&String::from("."), &matches);
@@ -70,11 +79,46 @@ fn traverse(path: &String, matches: &getopts::Matches) {
         let mut entries: Vec<_> = fs::read_dir(Path::new(stack.pop().unwrap().as_path())).unwrap().map(
             |res| res.unwrap().path()
         ).collect();
-        let dirs = entries.clone();
-        stack.extend(
-            entries.drain(..).filter(|e| e.is_dir())
-        );
-        // entries.sort_by(|a, b| a.metadata().unwrap().len().cmp(&b.metadata().unwrap().len()));
-        print!("{:?}\n", &dirs);
+        if matches.opt_present("R") { stack.extend(entries.drain(..).filter(|e| e.is_dir())); }
+
+        print(matches, &mut entries);
     }
+}
+
+fn print(matches: &getopts::Matches, entries: &mut Vec<PathBuf>) {
+    if !matches.opt_present("f") {
+        if !matches.opt_present("r") {
+            if matches.opt_present("S") {
+                entries.sort_by(size_cmp);
+            }
+            else {
+                entries.sort_by(name_cmp);
+            }
+        }
+        else {
+            if matches.opt_present("S") {
+                entries.sort_by(re_size_cmp)
+            }
+            else {
+                entries.sort_by(re_name_cmp);
+            }
+        }
+    }
+    print!("{:?}\n", &entries);
+}
+
+fn name_cmp(a: &PathBuf, b: &PathBuf) -> Ordering {
+    a.cmp(b)
+}
+
+fn re_name_cmp(a: &PathBuf, b: &PathBuf) -> Ordering {
+    b.cmp(a)
+}
+
+fn size_cmp(a: &PathBuf, b: &PathBuf) -> Ordering {
+    a.metadata().unwrap().len().cmp(&b.metadata().unwrap().len())
+}
+
+fn re_size_cmp(a: &PathBuf, b: &PathBuf) -> Ordering {
+    b.metadata().unwrap().len().cmp(&a.metadata().unwrap().len())
 }
