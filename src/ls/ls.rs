@@ -19,6 +19,7 @@ use std::fs;
 use std::cmp::Ordering;
 // use std::io::{ErrorKind, Result, Write};
 use std::path::{Path, PathBuf};
+use std::collections::HashMap;
 
 // static NAME: &'static str = "ls";
 // static VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -104,7 +105,46 @@ fn print(matches: &getopts::Matches, entries: &mut Vec<PathBuf>) {
             }
         }
     }
-    print!("{:?}\n", &entries);
+    if matches.opt_present("l") {
+        long_print(matches, entries);
+    }
+    else {
+        print!("{:?}", entries);
+    }
+}
+// all items inside one folder and just one level
+fn long_print(matches: &getopts::Matches, entries: &mut Vec<PathBuf>) {
+    let col_width = compute_width(entries);
+    print!("Long form{:?}\n", entries);
+}
+
+#[cfg(target_os = "windows")]
+fn compute_width(entries: &mut Vec<PathBuf>) -> Box<HashMap<&'static str, i64>>{
+    // let max_ino = entries.iter().map(|x| x.metadata().unwrap().dev()).max();
+    // print!("{:?}", max_ino);
+
+    for entry in entries {
+        let meta = entry.metadata().unwrap();
+        if entry.file_name().unwrap().to_str().unwrap() == "." {
+            continue;
+        }
+
+    }
+    let mut col_width = Box::new(HashMap::new());
+    col_width.insert("btotal", 0i64);
+    col_width.insert("stotal", 0);
+    col_width.insert("entries", 0);
+    col_width.insert("maxlen", 0);
+    col_width.insert("s_block", 0);
+    col_width.insert("s_flags", 0);
+    col_width.insert("s_group", 0);
+    col_width.insert("s_inode", 0);
+    col_width.insert("s_nlink", 0);
+    col_width.insert("s_size", 0);
+    col_width.insert("s_user", 0);
+    col_width.insert("s_major", 0);
+    col_width.insert("s_minor", 0);
+    return col_width
 }
 
 fn name_cmp(a: &PathBuf, b: &PathBuf) -> Ordering {

@@ -12,6 +12,9 @@ getopts = "*"
 libc = "*"
 uucore = { path="../uucore" }
 
+[target.'cfg(windows)'.dependencies]
+winapi = "0.2"
+
 [[bin]]
 name = "cp"
 path = "main.rs"
