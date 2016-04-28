@@ -19,6 +19,7 @@ extern crate uucore;
 use winapi::fileapi::*;
 use winapi::winnt::{FILE_ATTRIBUTE_NORMAL};
 use winapi::minwinbase::SECURITY_ATTRIBUTES;
+use winapi::minwindef::FILETIME;
 // use kernel32;
 use getopts::Options;
 use std::fs;
@@ -142,9 +143,19 @@ unsafe fn compute_width(entries: &mut Vec<PathBuf>) -> Box<HashMap<&'static str,
         if entry.file_name().unwrap().to_str().unwrap() == "." {
             continue;
         }
-        let fileinfo = ptr::null::<BY_HANDLE_FILE_INFORMATION>() as *mut winapi::BY_HANDLE_FILE_INFORMATION;
-        // let void = libc::c_void;
-        let myfile = kernel32::CreateFileA(
+        let mut fileinfo = BY_HANDLE_FILE_INFORMATION {
+            dwFileAttributes: 0,
+            ftCreationTime: FILETIME { dwLowDateTime: 0, dwHighDateTime: 0},
+            ftLastAccessTime: FILETIME { dwLowDateTime: 0, dwHighDateTime: 0},
+            ftLastWriteTime: FILETIME { dwLowDateTime: 0, dwHighDateTime: 0},
+            dwVolumeSerialNumber: 0,
+            nFileSizeHigh: 0,
+            nFileSizeLow: 0,
+            nNumberOfLinks: 0,
+            nFileIndexHigh: 0,
+            nFileIndexLow: 0
+        };
+        let file_handle = kernel32::CreateFileA(
             CString::new(entry.to_str().unwrap()).unwrap().as_ptr(),
             0u32,
             0u32,
@@ -153,9 +164,9 @@ unsafe fn compute_width(entries: &mut Vec<PathBuf>) -> Box<HashMap<&'static str,
             FILE_ATTRIBUTE_NORMAL,
             ptr::null::<c_void>() as *mut c_void
         );
-        print!("{:?}", myfile);
-        if kernel32::GetFileInformationByHandle(myfile, fileinfo) == 0 {
-            print!("{:?}", fileinfo);
+        print!("File handle {:?}\n", file_handle);
+        if kernel32::GetFileInformationByHandle(file_handle, &mut fileinfo) == 0 {
+            print!("File info {:?}\n", fileinfo);
         }
         print!("{:?}\n", entry.to_str().unwrap());
 
