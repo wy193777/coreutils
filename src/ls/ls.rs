@@ -10,9 +10,16 @@
  */
 
 extern crate getopts;
+extern crate winapi;
+extern crate kernel32;
+extern crate libc;
 #[macro_use]
 extern crate uucore;
 
+use winapi::fileapi::*;
+use winapi::winnt::{FILE_ATTRIBUTE_NORMAL};
+use winapi::minwinbase::SECURITY_ATTRIBUTES;
+// use kernel32;
 use getopts::Options;
 use std::fs;
 // use std::fs::{ReadDir, DirEntry, FileType, Metadata};
@@ -20,6 +27,11 @@ use std::cmp::Ordering;
 // use std::io::{ErrorKind, Result, Write};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
+use std::ffi::CString;
+use std::os::raw::c_void;
+use std::ptr;
+// use libc::c_void;
+
 
 // static NAME: &'static str = "ls";
 // static VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -114,12 +126,14 @@ fn print(matches: &getopts::Matches, entries: &mut Vec<PathBuf>) {
 }
 // all items inside one folder and just one level
 fn long_print(matches: &getopts::Matches, entries: &mut Vec<PathBuf>) {
-    let col_width = compute_width(entries);
-    print!("Long form{:?}\n", entries);
+    unsafe {
+        let col_width = compute_width(entries);
+        print!("Long form{:?}\n", entries);
+    }
 }
 
 #[cfg(target_os = "windows")]
-fn compute_width(entries: &mut Vec<PathBuf>) -> Box<HashMap<&'static str, i64>>{
+unsafe fn compute_width(entries: &mut Vec<PathBuf>) -> Box<HashMap<&'static str, i64>>{
     // let max_ino = entries.iter().map(|x| x.metadata().unwrap().dev()).max();
     // print!("{:?}", max_ino);
 
@@ -128,6 +142,22 @@ fn compute_width(entries: &mut Vec<PathBuf>) -> Box<HashMap<&'static str, i64>>{
         if entry.file_name().unwrap().to_str().unwrap() == "." {
             continue;
         }
+        let fileinfo = ptr::null::<BY_HANDLE_FILE_INFORMATION>() as *mut winapi::BY_HANDLE_FILE_INFORMATION;
+        // let void = libc::c_void;
+        let myfile = kernel32::CreateFileA(
+            CString::new(entry.to_str().unwrap()).unwrap().as_ptr(),
+            0u32,
+            0u32,
+            ptr::null::<SECURITY_ATTRIBUTES>() as *mut SECURITY_ATTRIBUTES,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            ptr::null::<c_void>() as *mut c_void
+        );
+        print!("{:?}", myfile);
+        if kernel32::GetFileInformationByHandle(myfile, fileinfo) == 0 {
+            print!("{:?}", fileinfo);
+        }
+        print!("{:?}\n", entry.to_str().unwrap());
 
     }
     let mut col_width = Box::new(HashMap::new());
