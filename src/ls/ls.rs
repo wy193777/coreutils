@@ -164,8 +164,7 @@ unsafe fn compute_width(entries: &mut Vec<PathBuf>) -> Box<HashMap<&'static str,
             FILE_ATTRIBUTE_NORMAL,
             ptr::null::<c_void>() as *mut c_void
         );
-        print!("File handle {:?}\n", file_handle);
-        if kernel32::GetFileInformationByHandle(file_handle, &mut fileinfo) == 0 {
+        if kernel32::GetFileInformationByHandle(file_handle, &mut fileinfo) != 0 {
             print!("File info {:?}\n", fileinfo);
         }
         print!("{:?}\n", entry.to_str().unwrap());
